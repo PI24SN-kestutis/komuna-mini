@@ -1,0 +1,73 @@
+
+<div th:fragment="main-content" xmlns:th="http://www.thymeleaf.org">
+
+    <header class="page-header">
+        <h1>Gyventojo skydelis</h1>
+        <p class="subtitle">Jūsų mokesčių suvestinė ir greiti veiksmai</p>
+    </header>
+
+
+    <section class="cards">
+        <div class="card">
+            <h3>Viso mokesčių</h3>
+            <div class="number" th:text="${#numbers.formatDecimal(totalFees, 1, 'POINT', 2, 'COMMA')}">0,00</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Apmokėta</div>
+            <div class="card-value"
+                 th:text="${#numbers.formatDecimal(paidFees, 1, 'POINT', 2, 'COMMA')}">0,00</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Skola</div>
+            <div class="card-value"
+                 th:text="${#numbers.formatDecimal(balance, 1, 'POINT', 2, 'COMMA')}">0,00</div>
+        </div>
+    </section>
+
+
+    <section class="notifications" th:if="${notifications != null and !notifications.isEmpty()}">
+        <h2>Pranešimai</h2>
+        <ul>
+            <li th:each="note : ${notifications}" th:text="${note}">Pavyzdinis pranešimas</li>
+        </ul>
+    </section>
+
+
+    <section class="table-section">
+        <h2>Jūsų mokesčiai</h2>
+
+        <div th:if="${fees == null or #lists.isEmpty(fees)}" class="empty-state">
+            <p>Šiuo metu įrašų nėra.</p>
+        </div>
+
+        <table th:if="${fees != null and !#lists.isEmpty(fees)}" class="table fees-table">
+            <thead>
+            <tr>
+                <th>Nr.</th>
+                <th>Tipas</th>
+                <th>Suma (€)</th>
+                <th>Statusas</th>
+                <th style="width:1%;">Veiksmas</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="fee, itStat : ${fees}">
+                <td th:text="${itStat.count}">1</td>
+                <td th:text="${fee.type}">Vanduo</td>
+                <td th:text="${#numbers.formatDecimal(fee.amount, 1, 'POINT', 2, 'COMMA')}">30,00</td>
+                <td>
+                    <span th:if="${fee.paid}" class="badge badge-success">Apmokėta</span>
+                    <span th:if="${!fee.paid}" class="badge badge-warning">Neapmokėta</span>
+                </td>
+                <td>
+                    <form th:if="${!fee.paid}" th:action="@{/dashboard/resident/pay/{id}(id=${fee.id})}" method="post" class="inline-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="add-btn">Apmokėti</button>
+                    </form>
+                    <span th:if="${fee.paid}" class="icon-check" aria-label="Apmokėta">✓</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</div>

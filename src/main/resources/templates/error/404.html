@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'Klaida ' + ${status}"></title>
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff, #e4ecf7);
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px 60px;
+            border-radius: 16px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 6em;
+            color: #3b82f6;
+            margin: 0;
+        }
+        h2 {
+            margin: 10px 0 20px 0;
+            color: #555;
+        }
+        a {
+            text-decoration: none;
+            color: white;
+            background-color: #3b82f6;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        a:hover {
+            background-color: #2563eb;
+        }
+        .emoji {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="emoji">🐝</div>
+    <h1 th:text="${status}">404</h1>
+    <h2 th:text="${message}">Puslapis nerastas</h2>
+
+    <p>
+        <a th:href="${dashboardLink}" th:text="${dashboardLink == '/login'} ? 'Grįžti į prisijungimą' : 'Grįžti į mano skydelį'"></a>
+    </p>
+</div>
+</body>
+</html>

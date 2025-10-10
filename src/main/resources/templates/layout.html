@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle != null ? pageTitle : 'KOMUNA'}">KOMUNA</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
+</head>
+<body th:attr="data-user-id=${#authentication?.principal?.id ?: ''}">
+
+
+
+<!-- ==================== SIDEBAR ==================== -->
+<div class="sidebar">
+    <div>
+        <h2>KOMUNA</h2>
+
+        <!-- Meniu keičiasi pagal rolę -->
+        <ul class="menu" th:switch="${role}">
+
+            <!-- ADMIN -->
+            <li th:case="'ADMIN'">
+                <ul class="menu">
+                    <li><a th:href="@{/dashboard/admin(view='overview')}" th:classappend="${view=='overview'} ? 'active'">Pagrindinis</a></li>
+                    <li><a th:href="@{/dashboard/admin(view='communities')}" th:classappend="${view=='communities'} ? 'active'">Bendrijos</a></li>
+                    <li><a th:href="@{/dashboard/admin(view='users')}" th:classappend="${view=='users'} ? 'active'">Vartotojai</a></li>
+                    <li><a th:href="@{/dashboard/admin(view='fees')}" th:classappend="${view=='fees'} ? 'active'">Paslaugos</a></li>
+                </ul>
+            </li>
+
+            <!-- MANAGER -->
+            <li th:case="'MANAGER'">
+                <ul class="menu">
+                    <li><a th:href="@{/dashboard/manager}" th:classappend="${view=='overview'} ? 'active'">Pagrindinis</a></li>
+                    <li><a th:href="@{/dashboard/manager(view='residents')}" th:classappend="${view=='residents'} ? 'active'">Gyventojai</a></li>
+                    <li><a th:href="@{/dashboard/manager(view='fees')}" th:classappend="${view=='fees'} ? 'active'">Mokesčiai</a></li>
+                    <li><a th:href="@{/dashboard/manager(view='reports')}" th:classappend="${view=='reports'} ? 'active'">Ataskaitos</a></li>
+                </ul>
+            </li>
+
+            <!-- RESIDENT -->
+            <li th:case="'RESIDENT'">
+                <ul class="menu">
+                    <li><a th:href="@{/dashboard/resident}" th:classappend="${view=='overview'} ? 'active'">Pagrindinis</a></li>
+                    <li><a th:href="@{/dashboard/resident(view='payments')}" th:classappend="${view=='payments'} ? 'active'">Mano įmokos</a></li>
+                    <li><a th:href="@{/dashboard/resident(view='notifications')}" th:classappend="${view=='notifications'} ? 'active'">Pranešimai</a></li>
+                    <li><a th:href="@{/dashboard/resident(view='profile')}" th:classappend="${view=='profile'} ? 'active'">Profilis</a></li>
+                </ul>
+            </li>
+
+            <!-- Default (jei rolė nenustatyta) -->
+            <li th:case="*">
+                <ul class="menu">
+                    <li><a th:href="@{/dashboard}">Pagrindinis</a></li>
+                </ul>
+            </li>
+
+        </ul>
+    </div>
+
+    <!-- Atsijungimo mygtukas -->
+    <div class="logout" style="margin-bottom:40px;">
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" style="background:#f87171;border:none;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;">
+                Atsijungti
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== TOPBAR ==================== -->
+<div class="topbar">
+    <h1 th:text="${pageTitle != null ? pageTitle : 'KOMUNA'}"></h1>
+    <div>
+
+<span th:text="${#authentication?.principal?.name ?: 'Neprisijungęs'}">
+    Vartotojas
+</span>
+
+
+    </div>
+</div>
+
+<!-- ==================== CONTENT ==================== -->
+<div class="content" th:fragment="main-content"
+     th:insert="~{${contentTemplate} :: main-content}">
+</div>
+
+<!-- ==================== MODAL ==================== -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3 id="modal-title">Modal</h3>
+        <form id="modal-form">
+            <div id="modal-body"></div>
+            <div id="modal-actions"></div>
+        </form>
+    </div>
+</div>
+
+
+<script th:src="@{/js/dashboard.js}"></script>
+</body>
+</html>

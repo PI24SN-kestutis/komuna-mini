@@ -1,0 +1,109 @@
+/* Bendras fonas ir centrinis išdėstymas */
+body {
+    margin: 0;
+    height: 100vh;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+}
+
+/* Visa kortelė (logo + forma) */
+.login-container {
+    background: #ffffff;
+    padding: 40px 50px;
+    border-radius: 14px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+    width: 360px;
+    text-align: center;
+    animation: fadeIn 0.6s ease;
+}
+
+/* LOGO sekcija */
+.logo {
+    margin-bottom: 20px;
+}
+.logo img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 10px;
+}
+.logo h1 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #1e3a8a;
+    letter-spacing: 1px;
+}
+.logo .subtitle {
+    font-size: 0.9em;
+    color: #64748b;
+    margin-bottom: 15px;
+}
+
+/* FORMOS stiliai */
+form {
+    text-align: left;
+}
+form h2 {
+    text-align: center;
+    color: #1e3a8a;
+    margin-bottom: 20px;
+}
+label {
+    display: block;
+    margin-top: 10px;
+    color: #374151;
+    font-weight: 500;
+}
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: all 0.2s ease;
+    outline: none;
+}
+input[type="email"]:focus,
+input[type="password"]:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Mygtukas */
+button {
+    margin-top: 20px;
+    width: 100%;
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-size: 1em;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+button:hover { background: #3b82f6; }
+button:active { transform: scale(0.98); }
+
+/* Pranešimai */
+.error {
+    color: #dc2626;
+    text-align: center;
+    margin-top: 15px;
+}
+.success {
+    color: #16a34a;
+    text-align: center;
+    margin-top: 15px;
+}
+
+/* Animacija */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+}

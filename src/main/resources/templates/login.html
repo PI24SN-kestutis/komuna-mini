@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <title>Prisijungimas – KOMUNA</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+<div class="login-container">
+
+    <!-- LOGOTIPO VIETA -->
+    <div class="logo">
+        <img th:src="@{/images/logo-komuna.png}" alt="KOMUNA" onerror="this.style.display='none'">
+        <h1>KOMUNA</h1>
+        <p class="subtitle">Bendrijų valdymo sistema</p>
+    </div>
+
+    <!-- PRISIJUNGIMO FORMA -->
+    <form th:action="@{/login}" method="post">
+        <h2>Prisijungimas</h2>
+
+        <label>El. paštas:</label>
+        <input type="email" name="username" required>
+
+        <label>Slaptažodis:</label>
+        <input type="password" name="password" required>
+
+        <button type="submit">Prisijungti</button>
+
+        <p th:if="${param.error}" class="error">Neteisingas prisijungimas.</p>
+        <p th:if="${param.logout}" class="success">Atsijungta sėkmingai.</p>
+    </form>
+
+</div>
+</body>
+</html>
