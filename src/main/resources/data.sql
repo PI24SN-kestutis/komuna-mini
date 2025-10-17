@@ -1,22 +1,41 @@
-INSERT INTO roles (id, name) VALUES (1, 'ADMIN'), (2, 'MANAGER'), (3, 'RESIDENT');
+INSERT INTO roles (id, name) VALUES
+                                 (1, 'ADMIN'),
+                                 (2, 'MANAGER'),
+                                 (3, 'RESIDENT');
 
-INSERT INTO communities (id, name, address, code) VALUES (1, 'Žalgirio bendrija', 'Žalgirio g. 3, Vilnius', '12345678');
-INSERT INTO communities (id, name, address, code) VALUES (2, 'Naugarduko bendrija', 'Naugarduko g. 45, Vilnius', '87654321');
+INSERT INTO communities (id, name, address, code)
+VALUES
+    (1, 'Žirmūnų bendrija', 'Žirmūnų g. 15, Vilnius', 'BND001'),
+    (2, 'Antakalnio bendrija', 'Antakalnio g. 10, Vilnius', 'BND002');
+
+INSERT INTO users (id, name, email, password, role_id, community_id)
+VALUES
+    (1, 'Administratorius', 'admin@komuna.lt', '$2a$12$89jgDgkNDbpXSE2tqYumvO7WRTkWwcms05IKuMMXhtrJCnlY7Nd9a', 1, NULL),
+    (2, 'Vadybininkas Jonas', 'jonas.manager@komuna.lt', '$2a$12$.vQ6/N.nqzXeIWBjm4GsQuO0tejQFmkq2.NaDZOk4UyZJFGUykjNK', 2, 1),
+    (3, 'Petras Gyventojas', 'petras@komuna.lt', '$2a$12$36dzuHbtMt0bpjjkN9JPi.F/idwsHwr/KvmwQgPCwv9qG6mGdCU0W', 3, 1),
+    (4, 'Ona Gyventoja', 'ona@komuna.lt', '$2a$12$n.CbVhFdA03fehv.RgiFUeSPPXWqRzxGgFcNZ7paygaOk7T/bnthy', 3, 2);
+
+INSERT INTO fees (id, name, unit, description, community_id, paid)
+VALUES
+    (1, 'Šildymas', 'kWh', 'Šildymo paslauga pagal suvartojimą', 1, false),
+    (2, 'Vanduo', 'm³', 'Šalto ir karšto vandens tiekimas', 1, false),
+    (3, 'Šiukšlių išvežimas', 'vnt', 'Atliekų tvarkymas', 2, false);
 
 
-INSERT INTO users (id, name, email, password, community_id, role_id) VALUES (1, 'Jonas Petrauskas', 'jonas@x.com', '$2a$12$.I0fqwohPzAajqn13TdyweNt7skw.WbSGtl1YFmFRG3WY6KVGM.gC', 1, 3);
-INSERT INTO users (id, name, email, password, community_id, role_id) VALUES (2, 'Agnė Kazlauskienė', 'agne@x.com', '$2a$12$r/jJQvZ80xNwGHWiD0cVxO2F8UgYzWSOF0GYQ7a.BCGuZT867RZ7C', 1, 2);
-INSERT INTO users (id, name, email, password, community_id, role_id) VALUES (3, 'Administratorius', 'admin@x.com', '$2a$12$P3Z1FRBXU6Dvk6fAgU90Fed2WHB.PombEdgak1.6/A/nSEPuRe32K', 1, 1);
-
-INSERT INTO fees (type, amount, paid, user_id) VALUES ('Vanduo', 24.50, false, 1);
-INSERT INTO fees (type, amount, paid, user_id) VALUES ('Šildymas', 80.00, true, 1);
-INSERT INTO fees (type, amount, paid, user_id) VALUES ('Atliekos', 10.20, false, 2);
-INSERT INTO fees (type, amount, paid, user_id) VALUES ('Vanduo', 30.10, true, 3);
+INSERT INTO prices (id, fee_id, community_id, amount, valid_from, valid_to)
+VALUES
+    (1, 1, 1, 0.12, '2025-01-01', NULL),
+    (2, 2, 1, 1.85, '2025-01-01', NULL),
+    (3, 3, 2, 3.50, '2025-01-01', NULL);
 
 
-SELECT MAX(ID) FROM USERS;
-ALTER TABLE USERS ALTER COLUMN ID RESTART WITH 4;
-SELECT MAX(ID) FROM COMMUNITIES;
-ALTER TABLE COMMUNITIES ALTER COLUMN ID RESTART WITH 3;
-SELECT MAX(ID) FROM FEES;
-ALTER TABLE FEES ALTER COLUMN ID RESTART WITH 5;
+SELECT MAX(id) FROM roles;
+ALTER TABLE roles ALTER COLUMN id RESTART WITH 4;
+SELECT MAX(id) FROM communities;
+ALTER TABLE communities ALTER COLUMN id RESTART WITH 3;
+SELECT MAX(id) FROM users;
+ALTER TABLE users ALTER COLUMN id RESTART WITH 5;
+SELECT MAX(id) FROM fees;
+ALTER TABLE fees ALTER COLUMN id RESTART WITH 4;
+SELECT MAX(id) FROM prices;
+ALTER TABLE prices ALTER COLUMN id RESTART WITH 4;

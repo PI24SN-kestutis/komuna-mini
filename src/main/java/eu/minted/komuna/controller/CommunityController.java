@@ -2,9 +2,12 @@ package eu.minted.komuna.controller;
 
 import eu.minted.komuna.model.Community;
 import eu.minted.komuna.service.CommunityService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/communities")
@@ -22,36 +25,71 @@ public class CommunityController {
     }
 
     @GetMapping("/{id}")
-    public Community getById(@PathVariable Long id) {
+    public Optional<Community> getById(@PathVariable Long id) {
         return communityService.findById(id);
     }
 
-    @PostMapping
-    public ResponseEntity<Community> create(@RequestBody Community community) {
-        communityService.save(community);
-        return ResponseEntity.ok(community);
+    // ===========================
+    // CREATE COMMUNITY
+    // ===========================
+    @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<?> createCommunity(@RequestBody Community community) {
+        try {
+            if (community.getCode() == null || community.getCode().isEmpty())
+                return ResponseEntity.badRequest().body(Map.of("error", "Bendrijos kodas privalomas."));
+            if (community.getName() == null || community.getName().isEmpty())
+                return ResponseEntity.badRequest().body(Map.of("error", "Bendrijos pavadinimas privalomas."));
+
+            Optional<Community> existing = communityService.findByCode(community.getCode());
+            if (existing.isPresent())
+                return ResponseEntity.badRequest().body(Map.of("error", "Toks bendrijos kodas jau egzistuoja."));
+
+            communityService.save(community);
+            return ResponseEntity.ok(Map.of("success", "Bendrija sėkmingai sukurta."));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
     }
 
+
+    // ===========================
+    // UPDATE COMMUNITY
+    // ===========================
     @PutMapping("/{id}")
-    public ResponseEntity<Community> update(@PathVariable Long id, @RequestBody Community updatedCommunity) {
-        Community existing = communityService.findById(id);
-        if (existing == null) {
-            return ResponseEntity.notFound().build();
+    @ResponseBody
+    public String updateCommunity(@PathVariable Long id, @RequestBody Community updatedCommunity) {
+        Optional<Community> existingOpt = communityService.findById(id);
+        if (existingOpt.isEmpty()) {
+            return "{\"error\":\"Bendrija nerasta.\"}";
         }
 
-        existing.setName(updatedCommunity.getName());
-        existing.setCode(updatedCommunity.getCode());
-        existing.setAddress(updatedCommunity.getAddress());
+        Community community = existingOpt.get();
+        community.setCode(updatedCommunity.getCode());
+        community.setName(updatedCommunity.getName());
+        community.setAddress(updatedCommunity.getAddress());
 
-        communityService.save(existing);
-        return ResponseEntity.ok(existing);
+        communityService.save(community);
+        return "{\"success\":\"Bendrija atnaujinta sėkmingai.\"}";
     }
 
+    // ===========================
+    // DELETE COMMUNITY
+    // ===========================
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        System.out.println("Gaunamas trynimo ID: " + id);
-        communityService.delete(id);
-        return ResponseEntity.noContent().build();
+    @ResponseBody
+    public String deleteCommunity(@PathVariable Long id) {
+        try {
+            Optional<Community> existing = communityService.findById(id);
+            if (existing.isEmpty()) {
+                return "{\"error\":\"Bendrija nerasta.\"}";
+            }
+
+            communityService.deleteById(id);
+            return "{\"success\":\"Bendrija pašalinta.\"}";
+        } catch (Exception e) {
+            return "{\"error\":\"Klaida šalinant bendriją: " + e.getMessage() + "\"}";
+        }
     }
 
 

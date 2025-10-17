@@ -45,13 +45,11 @@
                                 onclick="openEditCommunity(this)">
                             Redaguoti
                         </button>
-
                         <button class="delete"
                                 th:onclick="|openModal('confirm-delete', {url: '@{/communities/{id}(id=${c.id})}'})|">
                             Trinti
                         </button>
                     </td>
-
                 </tr>
                 </tbody>
             </table>
@@ -82,9 +80,9 @@
                     <td class="actions">
                         <button class="edit"
                                 th:attr="data-id=${u.id},
-                     data-name=${u.name},
-                     data-email=${u.email},
-                     data-role=${u.role != null ? u.role.name : ''}"
+                                     data-name=${u.name},
+                                     data-email=${u.email},
+                                     data-role=${u.role.name}"
                                 onclick="openEditUser(this)">
                             Redaguoti
                         </button>
@@ -94,7 +92,6 @@
                             Trinti
                         </button>
                     </td>
-
                 </tr>
                 </tbody>
             </table>
@@ -102,47 +99,96 @@
 
         <!-- FEES -->
         <div th:case="'fees'">
-            <h2>Paslaugos / Mokesčiai</h2>
-            <button class="add-btn" onclick="openModal('add-fee')">+ Naujas įrašas</button>
+            <h2>Paslaugos</h2>
+            <button class="add-btn" onclick="openModal('add-fee')">+ Nauja paslauga</button>
             <table>
                 <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Tipas</th>
-                    <th>Suma</th>
-                    <th>Apmokėta</th>
-                    <th>Vartotojas</th>
+                    <th>Pavadinimas</th>
+                    <th>Matavimo vnt.</th>
+                    <th>Aprašymas</th>
                     <th>Veiksmai</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="f : ${fees}">
                     <td th:text="${f.id}"></td>
-                    <td th:text="${f.type}"></td>
-                    <td th:text="${f.amount}"></td>
-                    <td th:text="${f.paid} ? 'Taip' : 'Ne'"></td>
-                    <td th:text="${f.user != null ? f.user.name : '-'}"></td>
+                    <td th:text="${f.name}"></td>
+                    <td th:text="${f.unit}"></td>
+                    <td th:text="${f.description}"></td>
                     <td class="actions">
                         <button class="edit"
                                 th:attr="data-id=${f.id},
-                     data-type=${f.type},
-                     data-amount=${f.amount},
-                     data-paid=${f.paid},
-                     data-userId=${f.user != null ? f.user.id : ''}"
+                                         data-name=${f.name},
+                                         data-unit=${f.unit},
+                                         data-description=${f.description}"
                                 onclick="openEditFee(this)">
                             Redaguoti
                         </button>
-
                         <button class="delete"
                                 th:onclick="|openModal('confirm-delete', {url: '@{/fees/{id}(id=${f.id})}'})|">
                             Trinti
                         </button>
                     </td>
-
                 </tr>
                 </tbody>
             </table>
         </div>
+
+        <!-- PRICES -->
+        <div th:case="'prices'">
+            <h2>Kainos</h2>
+            <button class="add-btn" onclick="openModal('add-price')">+ Nauja kaina</button>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Paslauga</th>
+                    <th>Bendrija</th>
+                    <th>Kaina (€)</th>
+                    <th>Galioja nuo</th>
+                    <th>Galioja iki</th>
+                    <th>Veiksmai</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${prices}">
+                    <td th:text="${p.id}"></td>
+                    <td th:text="${p.fee != null ? p.fee.name : '-'}"></td>
+                    <td th:text="${p.community != null ? p.community.name : '-'}"></td>
+                    <td th:text="${p.amount}"></td>
+                    <td th:text="${p.validFrom}"></td>
+                    <td th:text="${p.validTo != null ? p.validTo : '-'}"></td>
+                    <td class="actions">
+                        <button class="edit"
+                                th:attr="data-id=${p.id},
+                                 data-feeid=${p.fee != null ? p.fee.id : ''},
+                                 data-communityid=${p.community != null ? p.community.id : ''},
+                                 data-amount=${p.amount},
+                                 data-validfrom=${p.validFrom},
+                                 data-validto=${p.validTo}"
+                                onclick="openEditPrice(this)">
+                            Redaguoti
+                        </button>
+                        <button class="delete"
+                                th:onclick="|openModal('confirm-delete', {url: '@{/prices/{id}(id=${p.id})}'})|">
+                            Trinti
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            const allFees = [[${fees}]];
+            const allCommunities = [[${communities}]];
+            /*]]>*/
+        </script>
+
+
 
     </div>
 </div>

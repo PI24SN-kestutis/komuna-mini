@@ -1,6 +1,7 @@
 package eu.minted.komuna.controller;
 
 import eu.minted.komuna.service.CommunityService;
+import eu.minted.komuna.service.PriceService;
 import eu.minted.komuna.service.UserService;
 import eu.minted.komuna.service.FeeService;
 import org.springframework.security.core.Authentication;
@@ -17,14 +18,15 @@ public class DashboardController {
     private final CommunityService communityService;
     private final UserService userService;
     private final FeeService feeService;
+    private final PriceService priceService;
 
-    public DashboardController(CommunityService communityService, UserService userService, FeeService feeService) {
+    public DashboardController(CommunityService communityService, UserService userService, FeeService feeService, PriceService priceService) {
         this.communityService = communityService;
         this.userService = userService;
         this.feeService = feeService;
+        this.priceService = priceService;
     }
 
-    // 🔹 Nukreipimas pagal rolę
     @GetMapping
     public String redirectToDashboard(Authentication auth) {
         if (auth == null) return "redirect:/login";
@@ -36,27 +38,35 @@ public class DashboardController {
         };
     }
 
-    // 🔹 ADMIN DASHBOARD
+    // ADMIN DASHBOARD
     @GetMapping("/admin")
     public String adminDashboard(@RequestParam(defaultValue = "overview") String view, Model model) {
         model.addAttribute("pageTitle", "Administratoriaus skydelis");
         model.addAttribute("role", "ADMIN");
         model.addAttribute("view", view);
+        model.addAttribute("contentTemplate", "dashboard-admin");
+
         model.addAttribute("communitiesCount", communityService.findAll().size());
         model.addAttribute("usersCount", userService.findAll().size());
         model.addAttribute("feesCount", feeService.findAll().size());
-
-        model.addAttribute("contentTemplate", "dashboard-admin");
 
         switch (view) {
             case "users" -> model.addAttribute("users", userService.findAll());
             case "communities" -> model.addAttribute("communities", communityService.findAll());
             case "fees" -> {
                 model.addAttribute("fees", feeService.findAll());
-                model.addAttribute("users", userService.findAll());
+                model.addAttribute("communities", communityService.findAll());
             }
+            case "prices" -> {
+                model.addAttribute("prices", priceService.findAll());
+                model.addAttribute("fees", feeService.findAll());
+                model.addAttribute("communities", communityService.findAll());
+            }
+
+            default -> {}
         }
 
         return "layout";
     }
+
 }

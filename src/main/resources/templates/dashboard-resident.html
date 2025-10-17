@@ -60,11 +60,13 @@
                     <span th:if="${!fee.paid}" class="badge badge-warning">Neapmokėta</span>
                 </td>
                 <td>
-                    <form th:if="${!fee.paid}" th:action="@{/dashboard/resident/pay/{id}(id=${fee.id})}" method="post" class="inline-form">
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                        <button type="submit" class="add-btn">Apmokėti</button>
-                    </form>
-                    <span th:if="${fee.paid}" class="icon-check" aria-label="Apmokėta">✓</span>
+                    <button class="btn btn-primary"
+                            th:onclick="|payFee(${f.id})|"
+                            th:if="${!f.paid}">
+                        Apmokėti
+                    </button>
+                    <span class="badge badge-success" th:if="${f.paid}">Apmokėta</span>
+
                 </td>
             </tr>
             </tbody>

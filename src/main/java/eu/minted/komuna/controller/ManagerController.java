@@ -1,96 +1,79 @@
 package eu.minted.komuna.controller;
 
-import eu.minted.komuna.model.Community;
-import eu.minted.komuna.model.Fee;
-import eu.minted.komuna.model.User;
-import eu.minted.komuna.service.CommunityService;
-import eu.minted.komuna.service.FeeService;
-import eu.minted.komuna.service.UserService;
-import jakarta.servlet.http.HttpServletResponse;
+import eu.minted.komuna.model.*;
+import eu.minted.komuna.service.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/dashboard/manager")
 public class ManagerController {
 
-    private final UserService userService;
-    private final FeeService feeService;
-    private final CommunityService communityService;
+    @Autowired
+    private UserService userService;
 
-    public ManagerController(UserService userService, FeeService feeService, CommunityService communityService) {
-        this.userService = userService;
-        this.feeService = feeService;
-        this.communityService = communityService;
-    }
+    @Autowired
+    private CommunityService communityService;
 
+    @Autowired
+    private FeeService feeService;
+
+    @Autowired
+    private PriceService priceService;
+
+    // ===============================
+    // MANAGER DASHBOARD (overview)
+    // ===============================
     @GetMapping
     public String managerDashboard(
             @RequestParam(defaultValue = "overview") String view,
             Authentication authentication,
             Model model) {
 
-        User manager = userService.findByEmail(authentication.getName());
-        if (manager == null || manager.getCommunity() == null) {
-            model.addAttribute("error", "Bendrija nerasta arba naudotojas nepriskirtas jokiai bendrijai.");
+        // prisijungęs vadybininkas
+        Optional<User> managerOpt = userService.findByEmail(authentication.getName());
+        User manager = managerOpt.get();
+        if (manager.getCommunity() == null) {
+            model.addAttribute("error", "Bendrija nerasta arba vadybininkas nepriskirtas jokiai bendrijai.");
             return "error";
         }
 
         Community community = manager.getCommunity();
-        model.addAttribute("pageTitle", "Valdytojo skydelis");
+        List<User> residents = userService.findByCommunity(community);
+        List<Fee> fees = feeService.findAll();
+        List<Price> prices = priceService.findByCommunity(community);
+
+        // skaičiai statistikai
+        model.addAttribute("residentsCount", residents.size());
+        model.addAttribute("feesCount", fees.size());
+        model.addAttribute("pricesCount", prices.size());
+
         model.addAttribute("role", "MANAGER");
         model.addAttribute("view", view);
-        model.addAttribute("community", community);
+        model.addAttribute("pageTitle", "Vadybininko skydelis");
         model.addAttribute("contentTemplate", "dashboard-manager");
-        model.addAttribute("residentsCount", userService.countResidentsByCommunity(community));
-        model.addAttribute("feesCount", feeService.countByCommunity(community));
-        model.addAttribute("totalPaid", feeService.sumPaidByCommunity(community));
-        model.addAttribute("totalUnpaid", feeService.sumUnpaidByCommunity(community));
+
+        // perjungiami skirtingi vaizdai
         switch (view) {
-            case "residents" -> model.addAttribute("residents", userService.findResidentsByCommunity(community));
-            case "fees" -> model.addAttribute("fees", feeService.findByCommunity(community));
-            case "reports" -> model.addAttribute("reports", feeService.buildReportForCommunity(community));
+            case "residents" -> model.addAttribute("residents", residents);
+            case "fees" -> {
+                model.addAttribute("fees", fees);
+                model.addAttribute("prices", prices);
+            }
+            default -> {
+                // overview by default
+                model.addAttribute("residents", residents);
+                model.addAttribute("fees", fees);
+                model.addAttribute("prices", prices);
+            }
         }
 
         return "layout";
-    }
-
-    @GetMapping("/reports/export")
-    public void exportCsv(Authentication authentication, HttpServletResponse response) throws IOException {
-        User manager = userService.findByEmail(authentication.getName());
-        if (manager == null || manager.getCommunity() == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Bendrija nerasta arba naudotojas nepriskirtas jokiai bendrijai.");
-            return;
-        }
-
-        Community community = manager.getCommunity();
-        List<Fee> fees = feeService.buildReportForCommunity(community);
-
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("text/csv; charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=\"report_" + community.getCode() + ".csv\"");
-
-        PrintWriter writer = response.getWriter();
-        writer.write('\uFEFF');
-
-        writer.println("Gyventojas,Tipas,Suma (€),Apmokėta");
-        for (Fee f : fees) {
-            String name = f.getUser() != null ? f.getUser().getName() : "-";
-            String type = f.getType() != null ? f.getType() : "-";
-            String amount = String.format("%.2f", f.getAmount());
-            String paid = f.isPaid() ? "Taip" : "Ne";
-            writer.printf("%s,%s,%s,%s%n", name, type, amount, paid);
-        }
-
-        writer.flush();
-        writer.close();
     }
 }

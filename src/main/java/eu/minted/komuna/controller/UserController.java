@@ -4,34 +4,35 @@ import eu.minted.komuna.model.Community;
 import eu.minted.komuna.model.Role;
 import eu.minted.komuna.model.User;
 import eu.minted.komuna.service.CommunityService;
+import eu.minted.komuna.service.RoleService;
 import eu.minted.komuna.service.UserService;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.Map;
 
-@RestController
+import java.util.Map;
+import java.util.Optional;
+
+@Controller
 @RequestMapping("/users")
 public class UserController {
 
-    private final UserService userService;
+    @Autowired
+    private UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+    @Autowired
+    private RoleService roleService;
 
-    @GetMapping
-    public List<User> getAll() {
-        return userService.findAll();
-    }
+    @Autowired
+    private CommunityService communityService;
 
-    @GetMapping("/{id}")
-    public User getById(@PathVariable Long id) {
-        return userService.findById(id);
-    }
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Map<String, Object> payload) {
+    @ResponseBody
+    public Map<String, String> createUser(@RequestBody Map<String, Object> payload) {
         try {
             String name = (String) payload.get("name");
             String email = (String) payload.get("email");
@@ -39,81 +40,88 @@ public class UserController {
             String roleName = (String) payload.get("role");
             String communityCode = (String) payload.get("communityCode");
 
-            // 🔎 Patikrinam ar el. paštas jau egzistuoja
-            if (userService.existsByEmail(email)) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Vartotojas su tokiu el. paštu jau egzistuoja."));
-            }
+            if (email == null || email.isBlank())
+                return Map.of("error", "El. paštas privalomas.");
+            if (name == null || name.isBlank())
+                return Map.of("error", "Vardas privalomas.");
 
-            Role role = userService.findRoleByName(roleName);
-            Community community = userService.findCommunityByCode(communityCode);
+            Optional<Role> roleOpt = roleService.findByName(roleName);
+            if (roleOpt.isEmpty())
+                return Map.of("error", "Neteisinga rolė.");
 
+            // --- Naujo vartotojo kūrimas ---
             User user = new User();
             user.setName(name);
             user.setEmail(email);
-            user.setPassword(password);
-            user.setRole(role);
-            user.setCommunity(community);
+            user.setRole(roleOpt.get());
+
+            // --- Bendrijos priskyrimas ---
+            if (communityCode != null && !communityCode.isBlank()) {
+                communityService.findByCode(communityCode).ifPresent(user::setCommunity);
+            }
+
+            // --- Slaptažodis ---
+            String rawPassword;
+            if (password != null && !password.isBlank()) {
+                rawPassword = password;
+            } else {
+                // jei slaptažodis neįvestas – sukurti pagal vardą
+                rawPassword = name.trim(); // pvz. jonas -> jonas123
+            }
+            user.setPassword(passwordEncoder.encode(rawPassword));
 
             userService.save(user);
-            return ResponseEntity.ok(user);
 
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return Map.of("success", "Vartotojas sukurtas sėkmingai.",
+                    "generatedPassword", rawPassword);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Įvyko nenumatyta klaida: " + e.getMessage()));
+            return Map.of("error", "Klaida kuriant vartotoją: " + e.getMessage());
         }
     }
 
+
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+    @ResponseBody
+    public Map<String, String> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+        Optional<User> existingOpt = userService.findById(id);
+        if (existingOpt.isEmpty()) {
+            return Map.of("error", "Vartotojas nerastas.");
+        }
+
         try {
-            User existing = userService.findById(id);
-            if (existing == null) {
-                return ResponseEntity.status(404).body(Map.of("error", "Vartotojas nerastas."));
-            }
+            User user = existingOpt.get();
+            user.setName((String) payload.get("name"));
+            user.setEmail((String) payload.get("email"));
 
-            String name = (String) payload.get("name");
-            String email = (String) payload.get("email");
             String roleName = (String) payload.get("role");
+            if (roleName != null) {
+                roleService.findByName(roleName).ifPresent(user::setRole);
+            }
+
             String communityCode = (String) payload.get("communityCode");
-
-            // 🔎 Tikriname el. paštą (jei keičiamas)
-            if (email != null && !email.equals(existing.getEmail()) && userService.existsByEmail(email)) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Vartotojas su tokiu el. paštu jau egzistuoja."));
-            }
-
-            if (name != null) existing.setName(name);
-            if (email != null) existing.setEmail(email);
-
-            if (roleName != null && !roleName.isBlank()) {
-                Role role = userService.findRoleByName(roleName);
-                existing.setRole(role);
-            }
-
             if (communityCode != null && !communityCode.isBlank()) {
-                Community community = userService.findCommunityByCode(communityCode);
-                existing.setCommunity(community);
+                communityService.findByCode(communityCode).ifPresent(user::setCommunity);
             }
 
-            userService.save(existing);
-            return ResponseEntity.ok(existing);
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            userService.save(user);
+            return Map.of("success", "Vartotojas atnaujintas sėkmingai.");
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Klaida redaguojant vartotoją: " + e.getMessage()));
+            return Map.of("error", "Klaida atnaujinant vartotoją: " + e.getMessage());
         }
     }
 
     @DeleteMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        userService.delete(id);
-        return ResponseEntity.ok().build();
+    public Map<String, String> deleteUser(@PathVariable Long id) {
+        try {
+            Optional<User> existingOpt = userService.findById(id);
+            if (existingOpt.isEmpty()) {
+                return Map.of("error", "Vartotojas nerastas.");
+            }
+            userService.deleteById(id);
+            return Map.of("success", "Vartotojas pašalintas.");
+        } catch (Exception e) {
+            return Map.of("error", "Klaida šalinant vartotoją: " + e.getMessage());
+        }
     }
 }
-

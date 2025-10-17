@@ -1,12 +1,20 @@
 package eu.minted.komuna.controller;
 
+import eu.minted.komuna.model.Community;
 import eu.minted.komuna.model.Fee;
+import eu.minted.komuna.model.Price;
 import eu.minted.komuna.model.User;
+import eu.minted.komuna.service.CommunityService;
 import eu.minted.komuna.service.FeeService;
+import eu.minted.komuna.service.PriceService;
 import eu.minted.komuna.service.UserService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/fees")
@@ -14,10 +22,14 @@ public class FeeController {
 
     private final FeeService feeService;
     private final UserService userService;
+    private final CommunityService communityService;
+    private final PriceService priceService;
 
-    public FeeController(FeeService feeService, UserService userService) {
+    public FeeController(FeeService feeService, UserService userService, CommunityService communityService, PriceService priceService) {
         this.feeService = feeService;
         this.userService = userService;
+        this.communityService = communityService;
+        this.priceService = priceService;
     }
 
     @GetMapping
@@ -26,83 +38,83 @@ public class FeeController {
     }
 
     @GetMapping("/{id}")
-    public Fee getById(@PathVariable Long id) {
+    public Optional<Fee> getById(@PathVariable Long id) {
         return feeService.findById(id);
     }
 
+    // ===========================
+    // CREATE FEE
+    // ===========================
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Map<String, Object> payload) {
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> createFee(@RequestBody Fee fee) {
         try {
-            String type = (String) payload.get("type");
-            Double amount = Double.parseDouble(payload.get("amount").toString());
-            boolean paid = Boolean.parseBoolean(payload.get("paid").toString());
-            Long userId = payload.get("userId") != null ? Long.parseLong(payload.get("userId").toString()) : null;
-
-            if (userId == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Vartotojo ID privalomas."));
+            if (fee.getName() == null || fee.getName().isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Paslaugos pavadinimas privalomas."));
             }
 
-            User user = userService.findById(userId);
-            if (user == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Nurodytas vartotojas nerastas."));
+
+            if (fee.getUnit() == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Paslaugos žymėjimas būtinas privalomas."));
+            }
+            if (fee.getDescription() == null){
+                return ResponseEntity.badRequest().body(Map.of("error", "Paslaugos aprašymas būtinas privalomas."));
             }
 
-            Fee fee = new Fee();
-            fee.setType(type);
-            fee.setAmount(amount);
-            fee.setPaid(paid);
-            fee.setUser(user);
+            Fee saved = feeService.save(fee);
 
-            feeService.save(fee);
+            return ResponseEntity.ok(Map.of("success", "Paslauga sukurta sėkmingai (ID: " + saved.getId() + ")."));
 
-            return ResponseEntity.ok(fee);
-
+        } catch (DataIntegrityViolationException e) {
+            // Klaida iš DB (pvz. laukui negalima null)
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Duomenų bazės klaida: " + e.getMostSpecificCause().getMessage()
+            ));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Klaida kuriant įrašą: " + e.getMessage()));
+            // Bet kokia kita klaida
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Klaida kuriant paslaugą: " + e.getMessage()
+            ));
         }
     }
 
+
+    // ===========================
+    // UPDATE FEE
+    // ===========================
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
-        try {
-            Fee fee = feeService.findById(id);
-            if (fee == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Mokestis su ID " + id + " nerastas."));
-            }
-
-            // Atnaujinam laukus
-            if (payload.containsKey("type")) fee.setType((String) payload.get("type"));
-            if (payload.containsKey("amount")) fee.setAmount(Double.parseDouble(payload.get("amount").toString()));
-            if (payload.containsKey("paid")) fee.setPaid(Boolean.parseBoolean(payload.get("paid").toString()));
-
-            if (payload.containsKey("userId")) {
-                Long userId = Long.parseLong(payload.get("userId").toString());
-                User user = userService.findById(userId);
-                if (user == null) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Nurodytas vartotojas nerastas."));
-                }
-                fee.setUser(user);
-            }
-
-            feeService.save(fee);
-
-            return ResponseEntity.ok(fee);
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Klaida atnaujinant įrašą: " + e.getMessage()));
+    @ResponseBody
+    public String updateFee(@PathVariable Long id, @RequestBody Fee updatedFee) {
+        Optional<Fee> existingOpt = feeService.findById(id);
+        if (existingOpt.isEmpty()) {
+            return "{\"error\":\"Mokestis nerastas.\"}";
         }
+
+        Fee fee = existingOpt.get();
+        fee.setName(updatedFee.getName());
+        fee.setUnit(updatedFee.getUnit());
+        fee.setDescription(updatedFee.getDescription());
+
+        feeService.save(fee);
+        return "{\"success\":\"Mokestis atnaujintas sėkmingai.\"}";
     }
 
+    // ===========================
+    // DELETE FEE
+    // ===========================
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    @ResponseBody
+    public String deleteFee(@PathVariable Long id) {
         try {
-            feeService.delete(id);
-            return ResponseEntity.ok(Map.of("message", "Įrašas pašalintas."));
+            Optional<Fee> existingOpt = feeService.findById(id);
+            if (existingOpt.isEmpty()) {
+                return "{\"error\":\"Mokestis nerastas.\"}";
+            }
+
+            feeService.deleteById(id);
+            return "{\"success\":\"Mokestis pašalintas.\"}";
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Klaida šalinant įrašą: " + e.getMessage()));
+            return "{\"error\":\"Klaida šalinant mokestį: " + e.getMessage() + "\"}";
         }
     }
 

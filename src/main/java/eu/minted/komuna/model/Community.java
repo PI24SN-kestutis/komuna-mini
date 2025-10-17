@@ -14,58 +14,40 @@ public class Community {
     private Long id;
 
     @Column(nullable = false, unique = true)
+    private String code;
+
+    @Column(nullable = false, unique = true)
     private String name;
 
     @Column(nullable = false)
     private String address;
 
-    @Column(nullable=false, unique=true)
-    private String code;
-
-
-    // Viena bendrija turi daug vartotojų
-    @OneToMany(mappedBy = "community", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    // Bendrijos vartotojai
+    @OneToMany(mappedBy = "community", fetch = FetchType.LAZY)
+    @JsonManagedReference(value = "community-users")
     private List<User> users = new ArrayList<>();
 
+    // Bendrijos mokesčiai (paslaugos)
+    @OneToMany(mappedBy = "community", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "community-fees")
+    private List<Fee> fees = new ArrayList<>();
+
     // === GET/SET ===
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
 
-    public String getAddress() {
-        return address;
-    }
+    public List<User> getUsers() { return users; }
+    public void setUsers(List<User> users) { this.users = users; }
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public List<User> getUsers() {
-        return users;
-    }
-
-    public void setUsers(List<User> users) {
-        this.users = users;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
+    public List<Fee> getFees() { return fees; }
+    public void setFees(List<Fee> fees) { this.fees = fees; }
 }

@@ -24,7 +24,6 @@ public class CustomErrorController implements ErrorController {
             }
         }
 
-        // Gauk prisijungusio vartotojo rolę, jei yra
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String dashboardLink = "/login"; // numatytasis
 
