@@ -1,10 +1,12 @@
 <!-- Naudojame layout.html -->
 <div th:fragment="main-content" xmlns:th="http://www.w3.org/1999/xhtml">
+
     <div th:switch="${view}">
 
         <!-- OVERVIEW -->
         <div th:case="'overview'">
-            <h2>Mano bendrijos statistika</h2>
+            <h2 th:text="'Bendrija: ' + ${community.name}">Mano bendrijos statistika</h2>
+
             <div class="cards">
                 <div class="card">
                     <h3>Gyventojų</h3>
@@ -19,31 +21,100 @@
                     <div class="number" th:text="${pricesCount}">0</div>
                 </div>
             </div>
+
+            <div class="overview-note">
+                <p>Vadybininkas gali administruoti tik savo bendrijos duomenis — vartotojus, paslaugas ir kainas.</p>
+            </div>
         </div>
 
         <!-- RESIDENTS -->
         <div th:case="'residents'">
             <h2>Gyventojai</h2>
+            <button class="add-btn" onclick="openModal('add-user')">+ Naujas gyventojas</button>
+
             <table>
                 <thead>
                 <tr>
                     <th>ID</th>
                     <th>Vardas</th>
                     <th>El. paštas</th>
+                    <th>Rolė</th>
+                    <th>Veiksmai</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="r : ${residents}">
-                    <td th:text="${r.id}"></td>
-                    <td th:text="${r.name}"></td>
-                    <td th:text="${r.email}"></td>
+                <tr th:each="u : ${residents}">
+                    <td th:text="${u.id}"></td>
+                    <td th:text="${u.name}"></td>
+                    <td th:text="${u.email}"></td>
+                    <td th:text="${u.role.name}"></td>
+                    <td class="actions">
+                        <button class="edit"
+                                th:attr="data-id=${u.id},
+                                         data-name=${u.name},
+                                         data-email=${u.email},
+                                         data-role=${u.role.name},
+                                         data-communitycode=${community.code}"
+                                onclick="openEditUser(this)">
+                            Redaguoti
+                        </button>
+                        <button class="delete"
+                                th:onclick="|openModal('confirm-delete', {url: '@{/users/{id}(id=${u.id})}'})|">
+                            Trinti
+                        </button>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(residents)}">
+                    <td colspan="5" style="text-align:center; color:#888;">Nėra registruotų gyventojų.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FEES -->
+        <div th:case="'fees'">
+            <h2>Paslaugos</h2>
+            <button class="add-btn" onclick="openModal('add-fee')">+ Nauja paslauga</button>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>Pavadinimas</th>
+                    <th>Matavimo vnt.</th>
+                    <th>Aprašymas</th>
+                    <th>Veiksmai</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="f : ${fees}">
+                    <td th:text="${f.name}"></td>
+                    <td th:text="${f.unit}"></td>
+                    <td th:text="${f.description}"></td>
+                    <td class="actions">
+                        <button class="edit"
+                                th:attr="data-id=${f.id},
+                                         data-name=${f.name},
+                                         data-unit=${f.unit},
+                                         data-description=${f.description},
+                                         data-communityid=${community.id}"
+                                onclick="openEditFee(this)">
+                            Redaguoti
+                        </button>
+                        <button class="delete"
+                                th:onclick="|openModal('confirm-delete', {url: '@{/fees/{id}(id=${f.id})}'})|">
+                            Trinti
+                        </button>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(fees)}">
+                    <td colspan="4" style="text-align:center; color:#888;">Nėra sukurtų paslaugų.</td>
                 </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- PRICES -->
-        <div th:case="'fees'">
+        <div th:case="'prices'">
             <h2>Paslaugų kainos</h2>
             <button class="add-btn" onclick="openModal('add-price')">+ Nauja kaina</button>
 
@@ -61,11 +132,9 @@
                     <td th:text="${p.fee.name}"></td>
                     <td th:text="${#numbers.formatDecimal(p.amount, 1, 2)}"></td>
                     <td>
-                        <span class="price-date"
-                              th:text="${p.validTo != null
-                                  ? '(' + #temporals.format(p.validFrom, 'yyyy-MM-dd') + ' – ' + #temporals.format(p.validTo, 'yyyy-MM-dd') + ')'
-                                  : '(nuo ' + #temporals.format(p.validFrom, 'yyyy-MM-dd') + ')'}">
-                        </span>
+                        <span th:text="${p.validTo != null
+                            ? '(' + #temporals.format(p.validFrom, 'yyyy-MM-dd') + ' – ' + #temporals.format(p.validTo, 'yyyy-MM-dd') + ')'
+                            : '(nuo ' + #temporals.format(p.validFrom, 'yyyy-MM-dd') + ')'}"></span>
                     </td>
                     <td class="actions">
                         <button class="edit"
@@ -83,6 +152,9 @@
                             Trinti
                         </button>
                     </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(prices)}">
+                    <td colspan="4" style="text-align:center; color:#888;">Nėra kainų įrašų.</td>
                 </tr>
                 </tbody>
             </table>

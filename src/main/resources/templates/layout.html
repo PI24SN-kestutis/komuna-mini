@@ -8,7 +8,14 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
 
 </head>
-<body th:attr="data-user-id=${#authentication?.principal?.id ?: ''}">
+<body
+        th:attr="
+        data-user-id=${#authentication?.principal?.id ?: ''},
+        data-user-email=${#authentication?.name ?: ''},
+        data-role=${role ?: ''},
+        data-community-code=${community?.code ?: ''}
+    ">
+
 
 
 
@@ -35,12 +42,13 @@
             <!-- MANAGER -->
             <li th:case="'MANAGER'">
                 <ul class="menu">
-                    <li><a th:href="@{/dashboard/manager}" th:classappend="${view=='overview'} ? 'active'">Pagrindinis</a></li>
-                    <li><a th:href="@{/dashboard/manager(view='residents')}" th:classappend="${view=='residents'} ? 'active'">Gyventojai</a></li>
-                    <li><a th:href="@{/dashboard/manager(view='fees')}" th:classappend="${view=='fees'} ? 'active'">Mokesčiai</a></li>
-                    <li><a th:href="@{/dashboard/manager(view='reports')}" th:classappend="${view=='reports'} ? 'active'">Ataskaitos</a></li>
+                    <li><a th:href="@{/dashboard/manager(view='overview')}" th:classappend="${view=='overview'} ? 'active'">🏠 Pagrindinis</a></li>
+                    <li><a th:href="@{/dashboard/manager(view='residents')}" th:classappend="${view=='residents'} ? 'active'">👥 Gyventojai</a></li>
+                    <li><a th:href="@{/dashboard/manager(view='fees')}" th:classappend="${view=='fees'} ? 'active'">💡 Paslaugos</a></li>
+                    <li><a th:href="@{/dashboard/manager(view='prices')}" th:classappend="${view=='prices'} ? 'active'">💰 Kainos</a></li>
                 </ul>
             </li>
+
 
             <!-- RESIDENT -->
             <li th:case="'RESIDENT'">

@@ -27,47 +27,72 @@ public class ManagerController {
     @Autowired
     private PriceService priceService;
 
-    // ===============================
-    // MANAGER DASHBOARD (overview)
-    // ===============================
     @GetMapping
     public String managerDashboard(
             @RequestParam(defaultValue = "overview") String view,
             Authentication authentication,
             Model model) {
 
-        // prisijungęs vadybininkas
+
+        if (authentication == null || authentication.getName() == null) {
+            return "redirect:/login";
+        }
+
         Optional<User> managerOpt = userService.findByEmail(authentication.getName());
-        User manager = managerOpt.get();
-        if (manager.getCommunity() == null) {
-            model.addAttribute("error", "Bendrija nerasta arba vadybininkas nepriskirtas jokiai bendrijai.");
+        if (managerOpt.isEmpty()) {
+            model.addAttribute("error", "Naudotojas nerastas.");
             return "error";
         }
 
+        User manager = managerOpt.get();
+
+        if (manager.getCommunity() == null) {
+            model.addAttribute("error", "Vadybininkas nepriskirtas jokiai bendrijai.");
+            return "error";
+        }
+
+
         Community community = manager.getCommunity();
         List<User> residents = userService.findByCommunity(community);
-        List<Fee> fees = feeService.findAll();
+        List<Fee> fees = feeService.findByCommunity(community);
         List<Price> prices = priceService.findByCommunity(community);
 
-        // skaičiai statistikai
+
+        model.addAttribute("community", community);
+        model.addAttribute("communityName", community.getName());
         model.addAttribute("residentsCount", residents.size());
         model.addAttribute("feesCount", fees.size());
         model.addAttribute("pricesCount", prices.size());
+
 
         model.addAttribute("role", "MANAGER");
         model.addAttribute("view", view);
         model.addAttribute("pageTitle", "Vadybininko skydelis");
         model.addAttribute("contentTemplate", "dashboard-manager");
 
-        // perjungiami skirtingi vaizdai
+
         switch (view) {
-            case "residents" -> model.addAttribute("residents", residents);
+            case "residents" -> {
+                model.addAttribute("residents", residents);
+            }
+
             case "fees" -> {
                 model.addAttribute("fees", fees);
-                model.addAttribute("prices", prices);
             }
+
+            case "prices" -> {
+                model.addAttribute("prices", prices);
+                model.addAttribute("fees", fees);
+            }
+
+            case "reports" -> {
+                model.addAttribute("residents", residents);
+                model.addAttribute("fees", fees);
+                model.addAttribute("prices", prices);
+                model.addAttribute("community", community);
+            }
+
             default -> {
-                // overview by default
                 model.addAttribute("residents", residents);
                 model.addAttribute("fees", fees);
                 model.addAttribute("prices", prices);

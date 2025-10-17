@@ -17,29 +17,49 @@ function openModal(type, data = {}) {
     modalForm.onsubmit = null;
     modalBody.innerHTML = '';
 
-    // --- ADD / EDIT USER ---
-    if (type === 'add-user' || type === 'edit-user') {
-        modalTitle.textContent = type === 'add-user' ? 'Naujas vartotojas' : 'Redaguoti vartotoją';
-        modalBody.innerHTML = `
-            <label>Vardas</label><input name="name" value="${data.name || ''}" required>
-            <label>El. paštas</label><input name="email" type="email" value="${data.email || ''}" required>
-            ${type === 'add-user' ? '<label>Slaptažodis</label><input name="password" type="password">' : ''}
-            <label>Rolė</label>
-            <select name="role">
-                <option ${data.role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
-                <option ${data.role === 'MANAGER' ? 'selected' : ''}>MANAGER</option>
-                <option ${data.role === 'RESIDENT' ? 'selected' : ''}>RESIDENT</option>
-            </select>
+// --- ADD / EDIT USER ---
+if (type === 'add-user' || type === 'edit-user') {
+    modalTitle.textContent = type === 'add-user' ? 'Naujas vartotojas' : 'Redaguoti vartotoją';
+
+    // 🧩 Gaunam naudotojo rolę iš <body> (ją perduosime iš Thymeleaf)
+    const currentRole = document.body.dataset.role;
+    const currentCommunityCode = document.body.dataset.communityCode || '';
+
+    // Formuojam laukus
+    let communityField = '';
+    if (currentRole === 'ADMIN') {
+        communityField = `
             <label>Bendrijos kodas</label>
-            <input name="communityCode" required>
+            <input name="communityCode" value="${data.communityCode || ''}" required>
         `;
-        modalActions.innerHTML = `
-            <button type="button" class="cancel-btn" onclick="closeModal()">Atšaukti</button>
-            <button type="submit" class="save-btn">Išsaugoti</button>
+    } else if (currentRole === 'MANAGER') {
+        communityField = `
+            <input type="hidden" name="communityCode" value="${currentCommunityCode}">
         `;
-        modalForm.onsubmit = (e) =>
-            submitForm(e, type === 'add-user' ? '/users' : `/users/${data.id}`, type === 'add-user' ? 'POST' : 'PUT');
     }
+
+    modalBody.innerHTML = `
+        <label>Vardas</label><input name="name" value="${data.name || ''}" required>
+        <label>El. paštas</label><input name="email" type="email" value="${data.email || ''}" required>
+        ${type === 'add-user' ? '<label>Slaptažodis</label><input name="password" type="password">' : ''}
+        <label>Rolė</label>
+        <select name="role">
+            <option ${data.role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
+            <option ${data.role === 'MANAGER' ? 'selected' : ''}>MANAGER</option>
+            <option ${data.role === 'RESIDENT' ? 'selected' : ''}>RESIDENT</option>
+        </select>
+        ${communityField}
+    `;
+
+    modalActions.innerHTML = `
+        <button type="button" class="cancel-btn" onclick="closeModal()">Atšaukti</button>
+        <button type="submit" class="save-btn">Išsaugoti</button>
+    `;
+
+    modalForm.onsubmit = (e) =>
+        submitForm(e, type === 'add-user' ? '/users' : `/users/${data.id}`, type === 'add-user' ? 'POST' : 'PUT');
+}
+
 
     // --- ADD / EDIT COMMUNITY ---
     if (type === 'add-community' || type === 'edit-community') {
