@@ -49,6 +49,7 @@ public class DashboardController {
         model.addAttribute("communitiesCount", communityService.findAll().size());
         model.addAttribute("usersCount", userService.findAll().size());
         model.addAttribute("feesCount", feeService.findAll().size());
+        model.addAttribute("communities", communityService.findAll());
 
         switch (view) {
             case "users" -> model.addAttribute("users", userService.findAll());

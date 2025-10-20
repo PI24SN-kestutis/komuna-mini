@@ -1,5 +1,6 @@
 package eu.minted.komuna.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.ArrayList;
@@ -24,12 +25,12 @@ public class Community {
 
     // Bendrijos vartotojai
     @OneToMany(mappedBy = "community", fetch = FetchType.LAZY)
-    @JsonManagedReference(value = "community-users")
+    @JsonIgnore
     private List<User> users = new ArrayList<>();
 
     // Bendrijos mokesčiai (paslaugos)
     @OneToMany(mappedBy = "community", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference(value = "community-fees")
+    @JsonIgnore
     private List<Fee> fees = new ArrayList<>();
 
     // === GET/SET ===

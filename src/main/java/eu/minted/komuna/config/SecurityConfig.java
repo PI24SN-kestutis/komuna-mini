@@ -16,10 +16,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/login", "/error").permitAll()
-                        .requestMatchers("/dashboard/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/dashboard/admin/**", "/communities/**").hasRole("ADMIN")
                         .requestMatchers("/dashboard/manager/**", "/users/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers("/fees/**", "/prices/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers("/dashboard/resident/**").hasRole("RESIDENT")
+                        .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         .anyRequest().authenticated()
                 )

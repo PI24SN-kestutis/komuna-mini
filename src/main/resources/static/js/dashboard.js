@@ -4,6 +4,7 @@ const modalBody = document.getElementById('modal-body');
 const modalForm = document.getElementById('modal-form');
 
 function openModal(type, data = {}) {
+
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
@@ -21,8 +22,8 @@ function openModal(type, data = {}) {
 if (type === 'add-user' || type === 'edit-user') {
     modalTitle.textContent = type === 'add-user' ? 'Naujas vartotojas' : 'Redaguoti vartotoją';
 
-    // 🧩 Gaunam naudotojo rolę iš <body> (ją perduosime iš Thymeleaf)
-    const currentRole = document.body.dataset.role;
+    // Gaunam naudotojo rolę iš <body> (ją perduosime iš Thymeleaf)
+    const currentRole = document.body.dataset.role || 'ADMIN';
     const currentCommunityCode = document.body.dataset.communityCode || '';
 
     // Formuojam laukus
@@ -80,6 +81,8 @@ if (type === 'add-user' || type === 'edit-user') {
     // --- ADD / EDIT FEE (Paslauga) ---
     if (type === 'add-fee' || type === 'edit-fee') {
         modalTitle.textContent = type === 'add-fee' ? 'Nauja paslauga' : 'Redaguoti paslaugą';
+
+
         modalBody.innerHTML = `
         <label>Pavadinimas</label>
         <input name="name" value="${data.name || ''}" required>
@@ -89,7 +92,7 @@ if (type === 'add-user' || type === 'edit-user') {
 
         <label>Aprašymas</label>
         <textarea name="description" rows="3" style="width:100%">${data.description || ''}</textarea>
-        
+       
     `;
 
         modalActions.innerHTML = `
@@ -105,27 +108,32 @@ if (type === 'add-user' || type === 'edit-user') {
     if (type === 'add-price' || type === 'edit-price') {
         modalTitle.textContent = type === 'add-price' ? 'Nauja kaina' : 'Redaguoti kainą';
 
-        // Sudarom dropdown sąrašus
-        const feeOptions = allFees.map(f =>
-            `<option value="${f.id}" ${data.feeId == f.id ? 'selected' : ''}>${f.name}</option>`
-        ).join('');
+        const currentRole = document.body.dataset.role;
+        const currentCommunityId = document.body.dataset.communityId;
 
-        const communityOptions = allCommunities.map(c =>
-            `<option value="${c.id}" ${data.communityId == c.id ? 'selected' : ''}>${c.name}</option>`
-        ).join('');
+        // --- Bendrijos laukelis ---
+        let communityField = '';
+        if (currentRole === 'ADMIN') {
+            communityField = `
+            <label>Bendrija</label>
+            <select name="communityId" required id="communitySelect">
+                <option value="">Įkeliama...</option>
+            </select>
+        `;
+        } else if (currentRole === 'MANAGER') {
+            communityField = `
+            <input type="hidden" name="communityId" value="${currentCommunityId}">
+        `;
+        }
 
+        // --- Modal turinys ---
         modalBody.innerHTML = `
         <label>Paslauga</label>
-        <select name="feeId" required>
-            <option value="">— Pasirinkite paslaugą —</option>
-            ${feeOptions}
+        <select name="feeId" required id="feeSelect">
+            <option value="">Įkeliama...</option>
         </select>
 
-        <label>Bendrija</label>
-        <select name="communityId" required>
-            <option value="">— Pasirinkite bendriją —</option>
-            ${communityOptions}
-        </select>
+        ${communityField}
 
         <label>Kaina (€)</label>
         <input name="amount" type="number" step="0.01" value="${data.amount || ''}" required>
@@ -142,9 +150,62 @@ if (type === 'add-user' || type === 'edit-user') {
         <button type="submit" class="save-btn">Išsaugoti</button>
     `;
 
+        // --- Paslaugos ---
+        console.log("📡 Kraunamos paslaugos...");
+        fetch('/api/fees')
+            .then(res => {
+                console.log("📬 /fees status:", res.status);
+                return res.json();
+            })
+            .then(fees => {
+                console.table(fees);
+                const feeSelect = document.getElementById('feeSelect');
+                if (!feeSelect) return console.error("⚠️ feeSelect nerastas modale!");
+                if (fees.length === 0) {
+                    feeSelect.innerHTML = `<option disabled>Nėra paslaugų</option>`;
+                } else {
+                    feeSelect.innerHTML = fees.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+                }
+            })
+            .catch(err => console.error("❌ Klaida kraunant paslaugas:", err));
+
+        // --- Bendrijos tik ADMIN ---
+        if (currentRole === 'ADMIN') {
+            console.log("📡 Kraunamos bendrijos adminui...");
+            fetch('/api/communities')
+                .then(res => {
+                    console.log("📬 /communities status:", res.status);
+                    if (!res.ok) throw new Error("HTTP klaida: " + res.status);
+                    return res.json();
+                })
+                .then(communities => {
+                    console.table(communities);
+                    const communitySelect = document.getElementById('communitySelect');
+                    if (!communitySelect) return console.error("⚠️ communitySelect nerastas modale!");
+                    if (communities.length === 0) {
+                        communitySelect.innerHTML = `<option disabled>Nėra bendrijų</option>`;
+                    } else {
+                        communitySelect.innerHTML = communities
+                            .map(c => `<option value="${c.id}">${c.name}</option>`)
+                            .join('');
+                    }
+                })
+                .catch(err => {
+                    console.error("❌ Klaida kraunant bendrijas:", err);
+                    const communitySelect = document.getElementById('communitySelect');
+                    if (communitySelect)
+                        communitySelect.innerHTML = `<option disabled>Klaida kraunant duomenis</option>`;
+                });
+        }
+
+        // --- Submit ---
         modalForm.onsubmit = (e) =>
             submitForm(e, type === 'add-price' ? '/prices' : `/prices/${data.id}`, type === 'add-price' ? 'POST' : 'PUT');
     }
+
+
+
+
 
 
 
@@ -343,6 +404,95 @@ function showModalMessage(message, type = "success") {
         setTimeout(() => alertBox.remove(), 500);
     }, 3000);
 }
+
+// --- GYVENTOJO PROFILIO FORMOS LOGIKA ---
+document.addEventListener("DOMContentLoaded", () => {
+    const profileForm = document.getElementById("profileForm");
+    if (profileForm) {
+        console.log("🟢 Gyventojo profilio forma aptikta, pridedamas listeneris...");
+        profileForm.addEventListener("submit", handleResidentProfileSubmit);
+    }
+});
+
+function handleResidentProfileSubmit(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const userId = form.dataset.userId;
+    const formData = new FormData(form);
+    const jsonData = Object.fromEntries(formData.entries());
+    const messageBox = document.getElementById("profileMessage");
+
+    const token = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+    // Paprasta validacija prieš siuntimą
+    if (!jsonData.email || !jsonData.email.includes("@")) {
+        return showProfileMessage("Neteisingas el. paštas.", "error");
+    }
+    if (jsonData.password && jsonData.password.length < 6) {
+        return showProfileMessage("Slaptažodis turi būti bent 6 simbolių.", "error");
+    }
+
+    fetch(`/users/${userId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            [header]: token
+        },
+        body: JSON.stringify(jsonData)
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showProfileMessage(data.success, "success");
+
+                // pasirinktinai: jei keičiamas el. paštas, atsijungiam automatiškai
+                if (jsonData.email && jsonData.email !== document.body.dataset.userEmail) {
+                    setTimeout(() => {
+                        window.location.href = "/logout";
+                    }, 2000);
+                }
+            } else {
+                showProfileMessage(data.error || "Klaida atnaujinant profilį.", "error");
+            }
+        })
+        .catch(err => showProfileMessage("Tinklo klaida: " + err.message, "error"));
+}
+
+function showProfileMessage(message, type = "success") {
+    let box = document.getElementById("profileMessage");
+    if (!box) return;
+
+    box.style.padding = "10px";
+    box.style.marginTop = "10px";
+    box.style.borderRadius = "6px";
+    box.style.fontWeight = "500";
+    box.style.transition = "opacity 3s ease";
+
+    if (type === "error") {
+        box.style.background = "#fee2e2";
+        box.style.color = "#991b1b";
+        box.style.border = "1px solid #ef4444";
+    } else {
+        box.style.background = "#dcfce7";
+        box.style.color = "#166534";
+        box.style.border = "1px solid #22c55e";
+    }
+
+    box.textContent = message;
+    box.style.opacity = "1";
+
+    setTimeout(() => {
+        box.style.opacity = "0";
+        setTimeout(() => {
+            box.textContent = "";
+            box.style.padding = "0";
+            box.style.border = "none";
+        }, 500);
+    }, 3000);
+}
+
 
 
 

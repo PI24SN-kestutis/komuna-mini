@@ -47,6 +47,7 @@ public class PriceController {
             Double amount = payload.get("amount") != null
                     ? Double.valueOf(payload.get("amount").toString())
                     : null;
+
             if (feeId == null || amount == null)
                 return Map.of("error", "Reikalingas paslaugos ID ir kaina.");
 
@@ -58,19 +59,22 @@ public class PriceController {
                     : null;
 
             User user = userService.findByEmail(auth.getName()).orElseThrow();
-            boolean isManager = user.getRole().getName().equals("MANAGER");
+            boolean isManager = "MANAGER".equalsIgnoreCase(user.getRole().getName());
+            boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole().getName());
 
             Community community;
             if (isManager) {
                 if (user.getCommunity() == null)
                     return Map.of("error", "Vadybininkas neturi priskirtos bendrijos.");
                 community = user.getCommunity(); // 🔒 automatinis priskyrimas
-            } else {
+            } else if (isAdmin) {
                 if (payload.get("communityId") == null)
                     return Map.of("error", "Būtina nurodyti bendriją.");
                 Long communityId = Long.valueOf(payload.get("communityId").toString());
                 community = communityService.findById(communityId)
                         .orElseThrow(() -> new IllegalArgumentException("Bendrija nerasta."));
+            } else {
+                return Map.of("error", "Neturite teisės kurti kainų.");
             }
 
             Fee fee = feeService.findById(feeId)
@@ -85,6 +89,7 @@ public class PriceController {
 
             priceService.save(price);
             return Map.of("success", "Kaina sėkmingai sukurta.");
+
         } catch (IllegalArgumentException e) {
             return Map.of("error", e.getMessage());
         } catch (Exception e) {
@@ -92,6 +97,7 @@ public class PriceController {
             return Map.of("error", "Klaida kuriant kainą: " + e.getMessage());
         }
     }
+
 
     @PutMapping("/{id}")
     @ResponseBody

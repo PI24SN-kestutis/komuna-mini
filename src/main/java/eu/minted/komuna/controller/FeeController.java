@@ -60,14 +60,14 @@ public class FeeController {
 
             User user = userService.findByEmail(auth.getName()).orElseThrow();
             boolean isManager = user.getRole().getName().equals("MANAGER");
+            boolean isAdmin = user.getRole().getName().equals("ADMIN");
 
             if (isManager) {
                 if (user.getCommunity() == null)
                     return ResponseEntity.badRequest().body(Map.of("error", "Vadybininkas neturi priskirtos bendrijos."));
                 fee.setCommunity(user.getCommunity());
-            } else if (fee.getCommunity() != null && fee.getCommunity().getCode() != null) {
-                // Admin gali pasirinkti bendriją pagal kodą
-                communityService.findByCode(fee.getCommunity().getCode()).ifPresent(fee::setCommunity);
+            } else if (isAdmin) {
+                fee.setCommunity(null);
             } else {
                 return ResponseEntity.badRequest().body(Map.of("error", "Būtina priskirti bendriją."));
             }

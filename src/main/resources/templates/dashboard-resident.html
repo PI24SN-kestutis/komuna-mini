@@ -1,75 +1,73 @@
+<div th:fragment="main-content" xmlns:th="http://www.w3.org/1999/xhtml">
+    <div th:switch="${view}">
 
-<div th:fragment="main-content" xmlns:th="http://www.thymeleaf.org">
-
-    <header class="page-header">
-        <h1>Gyventojo skydelis</h1>
-        <p class="subtitle">Jūsų mokesčių suvestinė ir greiti veiksmai</p>
-    </header>
-
-
-    <section class="cards">
-        <div class="card">
-            <h3>Viso mokesčių</h3>
-            <div class="number" th:text="${#numbers.formatDecimal(totalFees, 1, 'POINT', 2, 'COMMA')}">0,00</div>
-        </div>
-        <div class="card">
-            <div class="card-title">Apmokėta</div>
-            <div class="card-value"
-                 th:text="${#numbers.formatDecimal(paidFees, 1, 'POINT', 2, 'COMMA')}">0,00</div>
-        </div>
-        <div class="card">
-            <div class="card-title">Skola</div>
-            <div class="card-value"
-                 th:text="${#numbers.formatDecimal(balance, 1, 'POINT', 2, 'COMMA')}">0,00</div>
-        </div>
-    </section>
-
-
-    <section class="notifications" th:if="${notifications != null and !notifications.isEmpty()}">
-        <h2>Pranešimai</h2>
-        <ul>
-            <li th:each="note : ${notifications}" th:text="${note}">Pavyzdinis pranešimas</li>
-        </ul>
-    </section>
-
-
-    <section class="table-section">
-        <h2>Jūsų mokesčiai</h2>
-
-        <div th:if="${fees == null or #lists.isEmpty(fees)}" class="empty-state">
-            <p>Šiuo metu įrašų nėra.</p>
+        <!-- OVERVIEW -->
+        <div th:case="'overview'">
+            <h2>Mano bendrija</h2>
+            <div class="cards">
+                <div class="card">
+                    <h3>Bendrija</h3>
+                    <div class="number" th:text="${community.name}">-</div>
+                </div>
+                <div class="card">
+                    <h3>Paslaugų</h3>
+                    <div class="number" th:text="${feesCount}">0</div>
+                </div>
+                <div class="card">
+                    <h3>Kainų</h3>
+                    <div class="number" th:text="${pricesCount}">0</div>
+                </div>
+            </div>
         </div>
 
-        <table th:if="${fees != null and !#lists.isEmpty(fees)}" class="table fees-table">
-            <thead>
-            <tr>
-                <th>Nr.</th>
-                <th>Tipas</th>
-                <th>Suma (€)</th>
-                <th>Statusas</th>
-                <th style="width:1%;">Veiksmas</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="fee, itStat : ${fees}">
-                <td th:text="${itStat.count}">1</td>
-                <td th:text="${fee.type}">Vanduo</td>
-                <td th:text="${#numbers.formatDecimal(fee.amount, 1, 'POINT', 2, 'COMMA')}">30,00</td>
-                <td>
-                    <span th:if="${fee.paid}" class="badge badge-success">Apmokėta</span>
-                    <span th:if="${!fee.paid}" class="badge badge-warning">Neapmokėta</span>
-                </td>
-                <td>
-                    <button class="btn btn-primary"
-                            th:onclick="|payFee(${f.id})|"
-                            th:if="${!f.paid}">
-                        Apmokėti
-                    </button>
-                    <span class="badge badge-success" th:if="${f.paid}">Apmokėta</span>
+        <!-- PAYMENTS -->
+        <div th:case="'payments'">
+            <h2>Bendrijos paslaugos</h2>
+            <table>
+                <thead>
+                <tr>
+                    <th>Paslauga</th>
+                    <th>Matavimo vnt.</th>
+                    <th>Kaina (€)</th>
+                    <th>Galioja nuo</th>
+                    <th>Galioja iki</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${prices}">
+                    <td th:text="${p.fee.name}"></td>
+                    <td th:text="${p.fee.unit}"></td>
+                    <td th:text="${#numbers.formatDecimal(p.amount, 1, 2)}"></td>
+                    <td th:text="${#temporals.format(p.validFrom, 'yyyy-MM-dd')}"></td>
+                    <td th:text="${p.validTo != null ? #temporals.format(p.validTo, 'yyyy-MM-dd') : '-'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-                </td>
-            </tr>
-            </tbody>
-        </table>
-    </section>
+        <!-- PROFILE -->
+        <div th:case="'profile'">
+            <h2>Mano profilis</h2>
+
+            <form id="profileForm" th:attr="data-user-id=${user.id}">
+                <label>Vardas</label>
+                <input name="name" type="text" th:value="${user.name}" readonly>
+
+                <label>El. paštas</label>
+                <input name="email" type="email" th:value="${user.email}" required>
+
+                <label>Naujas slaptažodis</label>
+                <input name="password" type="password" placeholder="Palikite tuščią, jei nekeičiate">
+
+                <button type="submit" class="save-btn">Išsaugoti</button>
+            </form>
+
+            <div id="profileMessage" style="margin-top:10px;"></div>
+
+        </div>
+
+
+    </div>
 </div>
+
+

@@ -1,6 +1,7 @@
 package eu.minted.komuna.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
@@ -29,7 +30,7 @@ public class Price {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "community_id", nullable = false)
-    @JsonBackReference(value = "price-community")
+    @JsonIgnore
     private Community community;
 
 

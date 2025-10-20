@@ -181,13 +181,9 @@
                 </tbody>
             </table>
         </div>
-        <script th:inline="javascript">
-            /*<![CDATA[*/
-            const allFees = [[${fees}]];
-            const allCommunities = [[${communities}]];
-            /*]]>*/
+        <script>
+            console.log("✅ dashboard-admin loaded for view:", "[[${view}]]");
         </script>
-
 
 
     </div>

@@ -26,7 +26,7 @@ public class Fee {
     // Bendrija, kuriai priskirta ši paslauga (mokestis)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "community_id", nullable = true)
-    @JsonBackReference(value = "community-fees") // ← SUTAPTI su Community.java
+    @JsonBackReference
     private Community community;
 
     // Kainos

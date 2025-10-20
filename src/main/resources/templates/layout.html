@@ -13,6 +13,7 @@
         data-user-id=${#authentication?.principal?.id ?: ''},
         data-user-email=${#authentication?.name ?: ''},
         data-role=${role ?: ''},
+        data-community-id=${community?.id ?: ''},
         data-community-code=${community?.code ?: ''}
     ">
 
@@ -111,5 +112,6 @@
 
 
 <script th:src="@{/js/dashboard.js}"></script>
+
 </body>
 </html>

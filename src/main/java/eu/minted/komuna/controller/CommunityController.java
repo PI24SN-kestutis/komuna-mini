@@ -19,7 +19,7 @@ public class CommunityController {
         this.communityService = communityService;
     }
 
-    @GetMapping
+    @GetMapping(produces =  MediaType.APPLICATION_JSON_VALUE)
     public List<Community> getAll() {
         return communityService.findAll();
     }

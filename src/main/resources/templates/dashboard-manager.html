@@ -115,35 +115,37 @@
 
         <!-- PRICES -->
         <div th:case="'prices'">
-            <h2>Paslaugų kainos</h2>
+            <h2>Kainos</h2>
+
             <button class="add-btn" onclick="openModal('add-price')">+ Nauja kaina</button>
 
             <table>
                 <thead>
                 <tr>
                     <th>Paslauga</th>
+                    <th>Bendrija</th>
                     <th>Kaina (€)</th>
-                    <th>Galioja</th>
+                    <th>Galioja nuo</th>
+                    <th>Galioja iki</th>
                     <th>Veiksmai</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="p : ${prices}">
                     <td th:text="${p.fee.name}"></td>
+                    <td th:text="${p.community.name}"></td>
                     <td th:text="${#numbers.formatDecimal(p.amount, 1, 2)}"></td>
-                    <td>
-                        <span th:text="${p.validTo != null
-                            ? '(' + #temporals.format(p.validFrom, 'yyyy-MM-dd') + ' – ' + #temporals.format(p.validTo, 'yyyy-MM-dd') + ')'
-                            : '(nuo ' + #temporals.format(p.validFrom, 'yyyy-MM-dd') + ')'}"></span>
-                    </td>
+                    <td th:text="${#temporals.format(p.validFrom, 'yyyy-MM-dd')}"></td>
+                    <td th:text="${p.validTo != null ? #temporals.format(p.validTo, 'yyyy-MM-dd') : '-'}"></td>
+
                     <td class="actions">
                         <button class="edit"
                                 th:attr="data-id=${p.id},
-                                         data-feeid=${p.fee.id},
-                                         data-communityid=${p.community.id},
-                                         data-amount=${p.amount},
-                                         data-validfrom=${p.validFrom},
-                                         data-validto=${p.validTo}"
+                                 data-feeid=${p.fee.id},
+                                 data-communityid=${p.community.id},
+                                 data-amount=${p.amount},
+                                 data-validfrom=${p.validFrom},
+                                 data-validto=${p.validTo}"
                                 onclick="openEditPrice(this)">
                             Redaguoti
                         </button>
@@ -153,12 +155,10 @@
                         </button>
                     </td>
                 </tr>
-                <tr th:if="${#lists.isEmpty(prices)}">
-                    <td colspan="4" style="text-align:center; color:#888;">Nėra kainų įrašų.</td>
-                </tr>
                 </tbody>
             </table>
         </div>
+
 
     </div>
 </div>
