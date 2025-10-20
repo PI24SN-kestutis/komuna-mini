@@ -14,7 +14,6 @@ function openModal(type, data = {}) {
     modal.style.display = 'flex';
     modalActions.innerHTML = '';
 
-    // Bendras reset
     modalForm.onsubmit = null;
     modalBody.innerHTML = '';
 
@@ -22,7 +21,6 @@ function openModal(type, data = {}) {
 if (type === 'add-user' || type === 'edit-user') {
     modalTitle.textContent = type === 'add-user' ? 'Naujas vartotojas' : 'Redaguoti vartotoją';
 
-    // Gaunam naudotojo rolę iš <body> (ją perduosime iš Thymeleaf)
     const currentRole = document.body.dataset.role || 'ADMIN';
     const currentCommunityCode = document.body.dataset.communityCode || '';
 
@@ -154,7 +152,7 @@ if (type === 'add-user' || type === 'edit-user') {
         console.log("📡 Kraunamos paslaugos...");
         fetch('/api/fees')
             .then(res => {
-                console.log("📬 /fees status:", res.status);
+                console.log("/fees status:", res.status);
                 return res.json();
             })
             .then(fees => {
@@ -167,7 +165,7 @@ if (type === 'add-user' || type === 'edit-user') {
                     feeSelect.innerHTML = fees.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
                 }
             })
-            .catch(err => console.error("❌ Klaida kraunant paslaugas:", err));
+            .catch(err => console.error("Klaida kraunant paslaugas:", err));
 
         // --- Bendrijos tik ADMIN ---
         if (currentRole === 'ADMIN') {
@@ -191,7 +189,7 @@ if (type === 'add-user' || type === 'edit-user') {
                     }
                 })
                 .catch(err => {
-                    console.error("❌ Klaida kraunant bendrijas:", err);
+                    console.error("Klaida kraunant bendrijas:", err);
                     const communitySelect = document.getElementById('communitySelect');
                     if (communitySelect)
                         communitySelect.innerHTML = `<option disabled>Klaida kraunant duomenis</option>`;
@@ -254,10 +252,10 @@ function submitForm(event, url, method) {
                 : {};
 
             if (res.ok) {
-                let successMsg = "Įrašas sėkmingai išsaugotas [from JS].";
-                if (method === "POST") successMsg = "Įrašas sėkmingai sukurtas. [from JS]";
-                if (method === "PUT") successMsg = "Įrašas sėkmingai atnaujintas. [from JS]";
-                if (method === "DELETE") successMsg = "Įrašas sėkmingai pašalintas. [from JS]";
+                let successMsg = "Įrašas sėkmingai išsaugotas.";
+                if (method === "POST") successMsg = "Įrašas sėkmingai sukurtas. ";
+                if (method === "PUT") successMsg = "Įrašas sėkmingai atnaujintas. ";
+                if (method === "DELETE") successMsg = "Įrašas sėkmingai pašalintas. ";
 
                 showModalMessage(successMsg, "success");
                 setTimeout(() => closeModalSmooth(), 500);
@@ -344,7 +342,7 @@ function openEditUser(el) {
 function openEditCommunity(el) {
     openModal('edit-community', {
         id: el.dataset.id,
-        code: el.dataset.code,          // ← pridėta ši eilutė
+        code: el.dataset.code,
         name: el.dataset.name,
         address: el.dataset.address
     });
@@ -409,24 +407,23 @@ function showModalMessage(message, type = "success") {
 document.addEventListener("DOMContentLoaded", () => {
     const profileForm = document.getElementById("profileForm");
     if (profileForm) {
-        console.log("🟢 Gyventojo profilio forma aptikta, pridedamas listeneris...");
+        console.log("✅ Gyventojo profilio forma aktyvuota");
         profileForm.addEventListener("submit", handleResidentProfileSubmit);
     }
 });
 
-function handleResidentProfileSubmit(e) {
+async function handleResidentProfileSubmit(e) {
     e.preventDefault();
 
     const form = e.target;
     const userId = form.dataset.userId;
     const formData = new FormData(form);
     const jsonData = Object.fromEntries(formData.entries());
-    const messageBox = document.getElementById("profileMessage");
 
     const token = document.querySelector('meta[name="_csrf"]').content;
     const header = document.querySelector('meta[name="_csrf_header"]').content;
 
-    // Paprasta validacija prieš siuntimą
+    // Validacija
     if (!jsonData.email || !jsonData.email.includes("@")) {
         return showProfileMessage("Neteisingas el. paštas.", "error");
     }
@@ -434,41 +431,47 @@ function handleResidentProfileSubmit(e) {
         return showProfileMessage("Slaptažodis turi būti bent 6 simbolių.", "error");
     }
 
-    fetch(`/users/${userId}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            [header]: token
-        },
-        body: JSON.stringify(jsonData)
-    })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                showProfileMessage(data.success, "success");
+    try {
+        const res = await fetch(`/users/${userId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                [header]: token
+            },
+            body: JSON.stringify(jsonData)
+        });
 
-                // pasirinktinai: jei keičiamas el. paštas, atsijungiam automatiškai
-                if (jsonData.email && jsonData.email !== document.body.dataset.userEmail) {
-                    setTimeout(() => {
-                        window.location.href = "/logout";
-                    }, 2000);
-                }
-            } else {
-                showProfileMessage(data.error || "Klaida atnaujinant profilį.", "error");
-            }
-        })
-        .catch(err => showProfileMessage("Tinklo klaida: " + err.message, "error"));
+        const text = await res.text();
+        let data = {};
+
+        try {
+            data = JSON.parse(text);
+        } catch {
+            console.warn("⚠️ Serveris grąžino HTML vietoj JSON:", text.substring(0, 100));
+            return showProfileMessage("Sesija pasibaigė arba trūksta teisių. Prisijunkite iš naujo.", "error");
+        }
+
+        if (res.ok && data.success) {
+            showProfileMessage(data.success, "success");
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showProfileMessage(data.error || "Klaida atnaujinant profilį.", "error");
+        }
+    } catch (err) {
+        console.error("Tinklo klaida:", err);
+        showProfileMessage("Tinklo klaida: " + err.message, "error");
+    }
 }
 
 function showProfileMessage(message, type = "success") {
-    let box = document.getElementById("profileMessage");
+    const box = document.getElementById("profileMessage");
     if (!box) return;
 
+    box.textContent = message;
+    box.style.opacity = "1";
+    box.style.fontSize = "15px";
     box.style.padding = "10px";
-    box.style.marginTop = "10px";
-    box.style.borderRadius = "6px";
-    box.style.fontWeight = "500";
-    box.style.transition = "opacity 3s ease";
+    box.style.textAlign = "center";
 
     if (type === "error") {
         box.style.background = "#fee2e2";
@@ -480,18 +483,11 @@ function showProfileMessage(message, type = "success") {
         box.style.border = "1px solid #22c55e";
     }
 
-    box.textContent = message;
-    box.style.opacity = "1";
-
     setTimeout(() => {
         box.style.opacity = "0";
-        setTimeout(() => {
-            box.textContent = "";
-            box.style.padding = "0";
-            box.style.border = "none";
-        }, 500);
     }, 3000);
 }
+
 
 
 

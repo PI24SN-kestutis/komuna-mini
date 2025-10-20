@@ -94,39 +94,70 @@ public class UserController {
         }
 
         try {
-            User user = existingOpt.get();
+            User targetUser = existingOpt.get();
+            User currentUser = userService.findByEmail(auth.getName()).orElseThrow();
+
+            String currentRole = currentUser.getRole().getName();
+
+            // RESIDENT gali keisti tik savo duomenis (vardą, email, password)
+            if (currentRole.equals("RESIDENT")) {
+                if (!currentUser.getId().equals(targetUser.getId())) {
+                    return Map.of("error", "Negalite redaguoti kitų naudotojų duomenų.");
+                }
+
+                targetUser.setName((String) payload.getOrDefault("name", targetUser.getName()));
+                targetUser.setEmail((String) payload.getOrDefault("email", targetUser.getEmail()));
 
 
-            boolean isManager = auth.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"));
-            if (isManager) {
-                User manager = userService.findByEmail(auth.getName()).orElseThrow();
-                if (user.getCommunity() == null ||
-                        !user.getCommunity().getId().equals(manager.getCommunity().getId())) {
+                if (payload.containsKey("password")) {
+                    String newPass = (String) payload.get("password");
+                    if (newPass != null && !newPass.isBlank()) {
+                        targetUser.setPassword(passwordEncoder.encode(newPass));
+                    }
+                }
+
+                userService.save(targetUser);
+                return Map.of("success", "Profilis atnaujintas sėkmingai.");
+            }
+
+            // MANAGER gali redaguoti tik savo bendrijos vartotojus (be rolės keitimo)
+            if (currentRole.equals("MANAGER")) {
+                if (targetUser.getCommunity() == null ||
+                        !targetUser.getCommunity().getId().equals(currentUser.getCommunity().getId())) {
                     return Map.of("error", "Negalite redaguoti kitų bendrijų vartotojų.");
                 }
+
+                targetUser.setName((String) payload.get("name"));
+                targetUser.setEmail((String) payload.get("email"));
+
+                userService.save(targetUser);
+                return Map.of("success", "Vartotojas atnaujintas sėkmingai.");
             }
 
+            // ADMIN – visos teisės
+            if (currentRole.equals("ADMIN")) {
+                targetUser.setName((String) payload.get("name"));
+                targetUser.setEmail((String) payload.get("email"));
 
-            user.setName((String) payload.get("name"));
-            user.setEmail((String) payload.get("email"));
+                String roleName = (String) payload.get("role");
+                if (roleName != null)
+                    roleService.findByName(roleName).ifPresent(targetUser::setRole);
 
-            String roleName = (String) payload.get("role");
-            if (!isManager && roleName != null) { // vadybininkas negali keisti rolės
-                roleService.findByName(roleName).ifPresent(user::setRole);
+                String communityCode = (String) payload.get("communityCode");
+                if (communityCode != null && !communityCode.isBlank())
+                    communityService.findByCode(communityCode).ifPresent(targetUser::setCommunity);
+
+                userService.save(targetUser);
+                return Map.of("success", "Vartotojas atnaujintas sėkmingai (admin režimas).");
             }
 
-            String communityCode = (String) payload.get("communityCode");
-            if (!isManager && communityCode != null && !communityCode.isBlank()) {
-                communityService.findByCode(communityCode).ifPresent(user::setCommunity);
-            }
-
-            userService.save(user);
-            return Map.of("success", "Vartotojas atnaujintas sėkmingai.");
+            return Map.of("error", "Rolė neatpažinta.");
         } catch (Exception e) {
+            e.printStackTrace();
             return Map.of("error", "Klaida atnaujinant vartotoją: " + e.getMessage());
         }
     }
+
 
 
     @DeleteMapping("/{id}")
