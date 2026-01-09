@@ -11,9 +11,9 @@ VALUES
 INSERT INTO users (id, name, email, password, role_id, community_id)
 VALUES
     (1, 'Administratorius', 'admin@komuna.lt', '$2a$12$89jgDgkNDbpXSE2tqYumvO7WRTkWwcms05IKuMMXhtrJCnlY7Nd9a', 1, NULL),
-    (2, 'Vadybininkas Jonas', 'jonas.manager@komuna.lt', '$2a$12$.vQ6/N.nqzXeIWBjm4GsQuO0tejQFmkq2.NaDZOk4UyZJFGUykjNK', 2, 1),
-    (3, 'Petras Gyventojas', 'petras@komuna.lt', '$2a$12$36dzuHbtMt0bpjjkN9JPi.F/idwsHwr/KvmwQgPCwv9qG6mGdCU0W', 3, 1),
-    (4, 'Ona Gyventoja', 'ona@komuna.lt', '$2a$12$n.CbVhFdA03fehv.RgiFUeSPPXWqRzxGgFcNZ7paygaOk7T/bnthy', 3, 2);
+    (2, 'Vadybininkas Jonas', 'jonas.manager@komuna.lt', '$2a$12$hE0LaZF3WZ4BltiAO5DhYe9VW3OqBPV2GzJSPTISZ.XN9N2vH/Jp.', 2, 1),
+    (3, 'Petras Gyventojas', 'petras@komuna.lt', '$2a$12$h/6JujhQEgR4c2/lEUK8.eP2uc8/TWmu3GflEiQe9VwaXtng9UDnW', 3, 1),
+    (4, 'Ona Gyventoja', 'ona@komuna.lt', '$2a$12$rq58rmh/jmoeFh8x7d0gvOUAh36w0eEX8bqTtC45YPGMiIaReSJ9W', 3, 2);
 
 INSERT INTO fees (id, name, unit, description, community_id, paid)
 VALUES
