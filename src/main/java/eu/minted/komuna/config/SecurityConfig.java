@@ -2,6 +2,7 @@ package eu.minted.komuna.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,13 +18,15 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/login", "/error").permitAll()
                         .requestMatchers("/dashboard/admin/**", "/communities/**").hasRole("ADMIN")
-                        .requestMatchers("/dashboard/manager/**", "/users/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers("/fees/**", "/prices/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/users/**").hasAnyRole("ADMIN", "MANAGER", "RESIDENT")
+                        .requestMatchers("/dashboard/manager/**", "/users/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers("/dashboard/resident/**").hasRole("RESIDENT")
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         .anyRequest().authenticated()
                 )
+
                 .formLogin(login -> login
                         .loginPage("/login")
                         .defaultSuccessUrl("/dashboard", true)
